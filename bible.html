@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>Bible App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #2D3436;
+            --secondary: #DFE6E9;
+            --accent: #74B9FF;
+            --text: #2D3436;
+            --background: #ffffff;
+            --card: #f8f9fa;
+            --shadow: rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] {
+            --primary: #DFE6E9;
+            --secondary: #2D3436;
+            --accent: #0984E3;
+            --text: #DFE6E9;
+            --background: #1a1a1a;
+            --card: #2D3436;
+            --shadow: rgba(255,255,255,0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            max-width: 100%;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--background);
+            padding: 1rem;
+            box-shadow: 0 2px 10px var(--shadow);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .main-content {
+            margin-top: 4rem;
+            padding: 1rem;
+            flex: 1;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 0.5rem;
+        }
+
+        .search-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        select, button {
+            background: var(--card);
+            border: 1px solid var(--shadow);
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            color: var(--text);
+            font-size: 0.9rem;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, button:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .verse-container {
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 4px 6px var(--shadow);
+            animation: slideIn 0.3s ease;
+        }
+
+        .verse-reference {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .verse-text {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--background);
+            padding: 1rem;
+            box-shadow: 0 -2px 10px var(--shadow);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .nav-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 0.8rem;
+            padding: 0.5rem;
+        }
+
+        .nav-button i {
+            font-size: 1.25rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            color: var(--accent);
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: #e74c3c;
+            padding: 1rem;
+            text-align: center;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 0.75rem;
+            margin: 1rem 0;
+        }
+
+        .chapter-view {
+            display: none;
+            padding-bottom: 4rem;
+        }
+
+        .chapter-view.active {
+            display: block;
+        }
+
+        .verse-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid var(--shadow);
+        }
+
+        .verse-number {
+            color: var(--accent);
+            font-weight: 600;
+            min-width: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <h1 class="header-title">Bible App</h1>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <i class="fas fa-moon"></i>
+            </button>
+        </header>
+
+        <main class="main-content">
+            <div class="search-bar">
+                <select id="translation" onchange="handleTranslationChange()">
+                    <option value="kjv">King James</option>
+                    <option value="web">World English</option>
+                    <option value="bbe">Basic English</option>
+                </select>
+                <select id="book" onchange="handleBookChange()"></select>
+                <select id="chapter" onchange="handleChapterChange()"></select>
+                <button onclick="toggleView()">
+                    <i class="fas fa-list"></i>
+                    <span>View</span>
+                </button>
+            </div>
+
+            <div id="verse-display"></div>
+            <div id="chapter-view" class="chapter-view"></div>
+        </main>
+
+        <nav class="bottom-nav">
+            <button class="nav-button" onclick="previousChapter()">
+                <i class="fas fa-chevron-left"></i>
+                <span>Previous</span>
+            </button>
+            <button class="nav-button" onclick="randomVerse()">
+                <i class="fas fa-random"></i>
+                <span>Random</span>
+            </button>
+            <button class="nav-button" onclick="toggleBookmark()">
+                <i class="fas fa-bookmark"></i>
+                <span>Save</span>
+            </button>
+            <button class="nav-button" onclick="nextChapter()">
+                <i class="fas fa-chevron-right"></i>
+                <span>Next</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_CONFIG = {
+            BASE_URL: 'https://bible-api.com',
+            BACKUP_URL: 'https://api.scripture.api.bible/v1/bibles',
+            API_KEY: 'YOUR_API_KEY' // For backup API
+        };
+
+        // State Management
+        const state = {
+            currentBook: 'Genesis',
+            currentChapter: 1,
+            currentVerse: 1,
+            currentTranslation: 'kjv',
+            isChapterView: false,
+            bookmarks: JSON.parse(localStorage.getItem('bookmarks') || '[]'),
+            theme: localStorage.getItem('theme') || 'light'
+        };
+
+        // Bible Data
+        const bibleData = {
+            books: [
+                "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
+                "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
+                "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra",
+                "Nehemiah", "Esther", "Job", "Psalms", "Proverbs",
+                "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations",
+                "Ezekiel", "Daniel", "Hosea", "Joel", "Amos",
+                "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk",
+                "Zephaniah", "Haggai", "Zechariah", "Malachi",
+                "Matthew", "Mark", "Luke", "John", "Acts",
+                "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians",
+                "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians",
+                "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews",
+                "James", "1 Peter", "2 Peter", "1 John", "2 John",
+                "3 John", "Jude", "Revelation"
+            ],
+            chapters: {} // Will be populated dynamically
+        };
+
+        // API Functions
+        async function fetchVerse(reference) {
+            try {
+                const response = await fetch(
+                    `${API_CONFIG.BASE_URL}/${reference}?translation=${state.currentTranslation}`
+                );
+                if (!response.ok) throw new Error('Failed to fetch verse');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching verse:', error);
+                throw error;
+            }
+        }
+
+        async function fetchChapter(book, chapter) {
+            try {
+                const response = await fetch(
+                    `${API_CONFIG.BASE_URL}/${book} ${chapter}?translation=${state.currentTranslation}`
+                );
+                if (!response.ok) throw new Error('Failed to fetch chapter');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching chapter:', error);
+                throw error;
+            }
+        }
+
+        // UI Update Functions
+        function updateVerseDisplay(verseData) {
+            const verseDisplay = document.getElementById('verse-display');
+            const reference = `${state.currentBook} ${state.currentChapter}:${state.currentVerse}`;
+            
+            verseDisplay.innerHTML = `
+                <div class="verse-container">
+                    <div class="verse-reference">${reference}</div>
+                    <div class="verse-text">${verseData.text}</div>
+                </div>
+            `;
+        }
+
+        function updateChapterView(chapterData) {
+            const chapterView = document.getElementById('chapter-view');
+            const verses = chapterData.verses || [];
+            
+            chapterView.innerHTML = verses.map(verse => `
+                <div class="verse-item">
+                    <span class="verse-number">${verse.verse}</span>
+                    <span class="verse-text">${verse.text}</span>
+                </div>
+            `).join('');
+        }
+
+        function showLoading() {
+            return `<div class="loading"><i class="fas fa-spinner"></i></div>`;
+        }
+
+        function showError(message) {
+            return `<div class="error">${message}</div>`;
+        }
+
+        // Event Handlers
+        async function handleTranslationChange() {
+            state.currentTranslation = document.getElementById('translation').value;
+            await loadCurrentPassage();
+        }
+
+        async function handleBookChange() {
+            state.currentBook = document.getElementById('book').value;
+            state.currentChapter = 1;
+            await loadCurrentPassage();
+        }
+
+        async function handleChapterChange() {
+            state.currentChapter = parseInt(document.getElementById('chapter').value);
+            await loadCurrentPassage();
+        }
+
+        async function loadCurrentPassage() {
+            const verseDisplay = document.getElementById('verse-display');
+            const chapterView = document.getElementById('chapter-view');
+            
+            verseDisplay.innerHTML = showLoading();
+            chapterView.innerHTML = showLoading();
+
+            try {
+                if (state.isChapterView) {
+                    const chapterData = await fetchChapter(state.currentBook, state.currentChapter);
+                    updateChapterView(chapterData);
+                } else {
+                    const verseData = await fetchVerse(
+                        `${state.currentBook} ${state.currentChapter}:${state.currentVerse}`
+                    );
+                    updateVerseDisplay(verseData);
+                }
+            } catch (error) {
+                const errorMessage = 'Failed to load scripture. Please try again.';
+                if (state.isChapterView) {
+                    chapterView.innerHTML = showError(errorMessage);
+                } else {
+                    verseDisplay.innerHTML = showError(errorMessage);
+                }
+            }
+        }
+
+        // Navigation Functions
+        async function previousChapter() {
+            if (state.currentChapter > 1) {
+                state.currentChapter--;
+            } else {
+                const currentBookIndex = bibleData.books.indexOf(state.currentBook);
+                if (currentBookIndex > 0) {
+                    state.currentBook = bibleData.books[currentBookIndex - 1];
+                    state.currentChapter = bibleData.chapters[state.currentBook] || 1;
+                }
+            }
+            await loadCurrentPassage();
+        }
+
+        async function nextChapter() {
+            const maxChapters = bibleData.chapters[state.currentBook] || 150;
+            if (state.currentChapter < maxChapters) {
+                state.currentChapter++;
+            } else {
+                const currentBookIndex = bibleData.books.indexOf(state.currentBook);
+                if (currentBookIndex < bibleData.books.length - 1) {
+                    state.currentBook = bibleData.books[currentBookIndex + 1];
+                    state.currentChapter = 1;
+                }
+            }
+            await loadCurrentPassage();
+        }
+
+        async function randomVerse() {
+            const randomBook = bibleData.books[Math.floor(Math.random() * bibleData.books.length)];
+            const randomChapter = Math.floor(Math.random() * (bibleData.chapters[randomBook] || 30)) + 1;
+            const randomVerse = Math.floor(Math.random() * 30) + 1;
+
+            state.currentBook = randomBook;
+            state.currentChapter = randomChapter;
+            state.currentVerse = randomVerse;
+            state.isChapterView = false;
+
+            await loadCurrentPassage();
+            updateUI();
+        }
+
+        // Bookmark Functions
+        function toggleBookmark() {
+            const currentReference = `${state.currentBook} ${state.currentChapter}:${state.currentVerse}`;
+            const bookmarkIndex = state.bookmarks.indexOf(currentReference);
+            
+            if (bookmarkIndex === -1) {
+                state.bookmarks.push(currentReference);
+                showToast('Bookmark added');
+            } else {
+                state.bookmarks.splice(bookmarkIndex, 1);
+                showToast('Bookmark removed');
+            }
+            
+            localStorage.setItem('bookmarks', JSON.stringify(state.bookmarks));
+            updateBookmarkIcon();
+        }
+
+        function updateBookmarkIcon() {
+            const currentReference = `${state.currentBook} ${state.currentChapter}:${state.currentVerse}`;
+            const bookmarkButton = document.querySelector('.nav-button i.fa-bookmark');
+            if (state.bookmarks.includes(currentReference)) {
+                bookmarkButton.classList.add('fas');
+                bookmarkButton.classList.remove('far');
+            } else {
+                bookmarkButton.classList.add('far');
+                bookmarkButton.classList.remove('fas');
+            }
+        }
+
+        // Theme Functions
+        function toggleTheme() {
+            const newTheme = state.theme === 'light' ? 'dark' : 'light';
+            state.theme = newTheme;
+            document.body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const themeIcon = document.querySelector('.theme-toggle i');
+            themeIcon.className = state.theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+
+        // View Toggle Functions
+        function toggleView() {
+            state.isChapterView = !state.isChapterView;
+            document.getElementById('verse-display').style.display = 
+                state.isChapterView ? 'none' : 'block';
+            document.getElementById('chapter-view').style.display = 
+                state.isChapterView ? 'block' : 'none';
+            
+            const viewButton = document.querySelector('button i.fa-list');
+            viewButton.className = state.isChapterView ? 'fas fa-verse' : 'fas fa-list';
+            
+            loadCurrentPassage();
+        }
+
+        // UI Utility Functions
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
+            }, 100);
+        }
+
+        function updateUI() {
+            document.getElementById('book').value = state.currentBook;
+            document.getElementById('chapter').value = state.currentChapter;
+            updateBookmarkIcon();
+            updateThemeIcon();
+        }
+
+        // Initialization
+        function initializeApp() {
+            // Populate book select
+            const bookSelect = document.getElementById('book');
+            bibleData.books.forEach(book => {
+                const option = document.createElement('option');
+                option.value = book;
+                option.textContent = book;
+                bookSelect.appendChild(option);
+            });
+
+            // Set initial theme
+            document.body.setAttribute('data-theme', state.theme);
+            updateThemeIcon();
+
+            // Load initial passage
+            loadCurrentPassage();
+            updateUI();
+
+            // Add touch support for swiping between chapters
+            let touchStartX = 0;
+            document.addEventListener('touchstart', e => {
+                touchStartX = e.touches[0].clientX;
+            });
+
+            document.addEventListener('touchend', e => {
+                const touchEndX = e.changedTouches[0].clientX;
+                const diff = touchStartX - touchEndX;
+
+                if (Math.abs(diff) > 50) { // Minimum swipe distance
+                    if (diff > 0) {
+                        nextChapter();
+                    } else {
+                        previousChapter();
+                    }
+                }
+            });
+
+            // Add keyboard navigation
+            document.addEventListener('keydown', e => {
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        previousChapter();
+                        break;
+                    case 'ArrowRight':
+                        nextChapter();
+                        break;
+                }
+            });
+
+            // Add offline support
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed:', err);
+                    });
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>
